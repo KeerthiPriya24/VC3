@@ -105,11 +105,17 @@ class OSSynchronizer:
             return False
 
         dest = target_folder / file_path.name
-        if dest == file_path:
-            return True  # already in place
 
-        # Handle name conflicts
-        dest = self._unique_dest(dest)
+        # Already in the right folder? (use resolved paths to avoid false negatives)
+        if dest.resolve() == file_path.resolve():
+            return True
+        if file_path.resolve().parent == target_folder.resolve():
+            return True
+
+        # If an identical-named file already sits at dest, skip (don't create _1 copies)
+        if dest.exists():
+            logger.info("Destination %s already exists, skipping duplicate move", dest)
+            return True
 
         checksum_before = ContentAnalyzer.compute_checksum(file_path)
 
@@ -227,14 +233,17 @@ class OSSynchronizer:
     def _unique_dest(dest: Path) -> Path:
         if not dest.exists():
             return dest
-        stem = dest.stem
+        # Strip any trailing _N from stem to prevent cascading _1_1_1 names
+        raw_stem = dest.stem
         suffix = dest.suffix
         parent = dest.parent
+        base = re.sub(r'(_\d+)+$', '', raw_stem)
         counter = 1
-        while dest.exists():
-            dest = parent / f"{stem}_{counter}{suffix}"
+        while True:
+            candidate = parent / f"{base}_{counter}{suffix}"
+            if not candidate.exists():
+                return candidate
             counter += 1
-        return dest
 
     def _log_preview(self, update: ClusterUpdate) -> None:
         logger.info("=== PREVIEW MODE – no changes applied ===")

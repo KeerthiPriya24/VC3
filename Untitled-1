@@ -1,0 +1,17 @@
++-------------------+         +---------------------+         +-------------------+
+|                   |         |                     |         |                   |
+|   File Monitor    +-------->+   Content Analyzer  +-------->+  Semantic Engine  |
+| (watchdog, OS     |         | (PDF/TXT extract,   |         | (Embeddings,      |
+|  events)          |         |  chardet, PyPDF2)   |         |  Clustering,      |
+|                   |         |                     |         |  TF-IDF Naming)   |
++--------+----------+         +----------+----------+         +---------+---------+
+         |                               |                              |
+         |                               |                              |
+         v                               v                              v
++--------+----------+         +----------+----------+         +---------+---------+
+|                   |         |                     |         |                   |
+|   OS Synchronizer <---------+     Database        +<--------+     Web UI        |
+| (Moves/Renames    |         |   (SQLite, files,   |         | (Streamlit,       |
+|  files/folders)   |         |    clusters, config)|         |  Plotly,          |
+|                   |         |                     |         |  2D Map, Upload)  |
++-------------------+         +---------------------+         +-------------------+

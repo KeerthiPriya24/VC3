@@ -48,6 +48,8 @@ class SEFSOrchestrator:
             preview_mode=config.enable_preview_mode,
         )
         self._stop_event = threading.Event()
+        self._clustering_lock = threading.Lock()
+        self._last_sync_time: float = 0  # timestamp of last OS sync
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -64,6 +66,8 @@ class SEFSOrchestrator:
         logger.info("SEFS is running. Press Ctrl+C to stop.")
 
         # Block until stop
+        last_quick_scan = time.time()
+        QUICK_SCAN_INTERVAL = 5  # seconds between periodic disk checks
         try:
             while not self._stop_event.is_set():
                 # Check for manual trigger from UI
@@ -71,7 +75,13 @@ class SEFSOrchestrator:
                     logger.info("Manual scan triggered from UI")
                     self.db.set_config("trigger_scan", "false")
                     self._full_scan()
-                
+                    last_quick_scan = time.time()
+
+                # Periodic quick-scan: detect new / removed files
+                elif time.time() - last_quick_scan >= QUICK_SCAN_INTERVAL:
+                    self._quick_scan()
+                    last_quick_scan = time.time()
+
                 self._stop_event.wait(timeout=1)
         except KeyboardInterrupt:
             pass
@@ -117,15 +127,60 @@ class SEFSOrchestrator:
         self._run_clustering()
 
     # ------------------------------------------------------------------
+    # Quick scan – lightweight periodic check for new / removed files
+    # ------------------------------------------------------------------
+    def _quick_scan(self) -> None:
+        """Compare disk vs DB; only act when there is a genuine difference."""
+        # Skip if an OS sync just happened (let FSEvents settle)
+        if time.time() - self._last_sync_time < 3:
+            return
+
+        disk_files = set(
+            p.resolve()
+            for p in self.cfg.root.rglob("*")
+            if p.is_file()
+            and not any(part.startswith(".") for part in p.relative_to(self.cfg.root).parts)
+            and p.suffix.lower().lstrip(".") in SUPPORTED_EXTENSIONS
+        )
+        db_files = self.db.get_all_files()
+        db_paths = {f.file_path.resolve() for f in db_files}
+
+        new_files = disk_files - db_paths
+        removed_files = db_paths - disk_files
+
+        if not new_files and not removed_files:
+            return  # nothing changed – skip expensive work
+
+        if new_files:
+            logger.info("Quick-scan found %d new file(s)", len(new_files))
+            for fp in new_files:
+                self.analyzer.analyze_file(fp)
+
+        if removed_files:
+            logger.info("Quick-scan found %d removed file(s)", len(removed_files))
+            for fp in removed_files:
+                self.db.delete_file(fp)
+
+        self._run_clustering()
+
+    # ------------------------------------------------------------------
     # Event callbacks
     # ------------------------------------------------------------------
     def _on_files_changed(self, paths: set[Path]) -> None:
+        # Skip watchdog events that arrive right after an OS sync
+        if time.time() - self._last_sync_time < 3:
+            logger.debug("Ignoring %d change event(s) during post-sync cooldown", len(paths))
+            return
         logger.info("Change event for %d file(s)", len(paths))
         for fp in paths:
             self.analyzer.analyze_file(fp)
         self._run_clustering()
 
     def _on_files_deleted(self, paths: set[Path]) -> None:
+        # Skip watchdog events that arrive right after an OS sync
+        if time.time() - self._last_sync_time < 3:
+            logger.debug("Ignoring %d delete event(s) during post-sync cooldown", len(paths))
+            return
         logger.info("Delete event for %d file(s)", len(paths))
         for fp in paths:
             self.db.delete_file(fp)
@@ -135,14 +190,19 @@ class SEFSOrchestrator:
     # Clustering pipeline
     # ------------------------------------------------------------------
     def _run_clustering(self) -> None:
+        if not self._clustering_lock.acquire(blocking=False):
+            logger.debug("Clustering already in progress, skipping")
+            return
+        try:
+            self._run_clustering_locked()
+        finally:
+            self._clustering_lock.release()
+
+    def _run_clustering_locked(self) -> None:
         files = self.db.get_all_files()
         embeddings = {f.file_path: f.embedding for f in files if f.embedding is not None}
         if not embeddings:
             return
-
-        # Check manual mode early
-        raw_manual = self.db.get_config("manual_mode")
-        manual_mode = str(raw_manual).lower() == "true"
 
         # Gather summaries for keyword extraction
         file_texts = {f.file_path: (f.content_summary or f.filename) for f in files}
@@ -196,11 +256,9 @@ class SEFSOrchestrator:
             conn.execute("ROLLBACK")
             raise
 
-        # Sync to OS (Skip if manual mode is on)
-        if manual_mode:
-            logger.info("Manual Approval Mode is ON: skipping automatic OS synchronization.")
-        else:
-            self.synchronizer.apply_cluster_update(update)
+        # Sync to OS
+        self.synchronizer.apply_cluster_update(update)
+        self._last_sync_time = time.time()  # cooldown: ignore watchdog events briefly
 
         logger.info(
             "Clustering complete: %d cluster(s), %d file(s)",

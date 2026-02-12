@@ -31,9 +31,6 @@ dev = [
 [project.scripts]
 sefs = "sefs.main:main"
 
-[tool.setuptools.packages.find]
-include = ["sefs*"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

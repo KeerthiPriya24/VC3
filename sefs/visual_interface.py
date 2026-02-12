@@ -18,8 +18,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from sefs.config import SEFSConfig
 from sefs.database import Database
-from sefs.models import FileMetadata, ClusterInfo, ClusterUpdate
-from sefs.os_synchronizer import OSSynchronizer
+from sefs.models import FileMetadata, ClusterInfo
 
 # ---------------------------------------------------------------------------
 # Page config
@@ -104,7 +103,7 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
-    st.title("🗂️ SEFS — Semantic Entropy File System")
+    st.title("SEFS — Semantic Entropy File System")
 
     # Load config and DB early
     # Try CWD first, then default
@@ -145,22 +144,13 @@ def main() -> None:
     with st.sidebar:
         st.header("SEFS Control")
         
-        # --- Re-Run Section (Prominent) ---
-        col_run1, col_run2 = st.columns(2)
-        with col_run1:
-            if st.button("🔄 Re-Scan Now", type="primary", use_container_width=True):
-                db.set_config("trigger_scan", "true")
-                st.toast("✅ Re-scan triggered! Backend will process shortly.")
-                time.sleep(1)
-                st.rerun()
-        with col_run2:
-            if st.button("🧹 Full Re-Analyze", use_container_width=True, help="Clear all embeddings and re-analyze from scratch"):
-                db._conn.execute("UPDATE files SET embedding = NULL")
-                db._conn.commit()
-                db.set_config("trigger_scan", "true")
-                st.toast("🔄 Full re-analysis triggered! This may take a moment.")
-                time.sleep(1)
-                st.rerun()
+        if st.button(" Full Re-Analyze", use_container_width=True, help="Clear all embeddings and re-analyze from scratch"):
+            db._conn.execute("UPDATE files SET embedding = NULL")
+            db._conn.commit()
+            db.set_config("trigger_scan", "true")
+            st.toast("🔄 Full re-analysis triggered! This may take a moment.")
+            time.sleep(1)
+            st.rerun()
         
         # --- File Upload Section with Approval Dialog ---
         st.subheader("Upload File")
@@ -178,29 +168,29 @@ def main() -> None:
                     st.info("File already at root, waiting for sync.")
                 else:
                     # Show approval dialog
-                    st.info(f"📄 **{uploaded_file.name}** ({uploaded_file.size / 1024:.1f} KB)")
+                    st.info(f" **{uploaded_file.name}** ({uploaded_file.size / 1024:.1f} KB)")
                     st.markdown("Would you like SEFS to **read and classify** this file?")
                     col_approve, col_deny = st.columns(2)
                     with col_approve:
-                        if st.button("✅ Approve", key=f"approve_{upload_key}", type="primary", use_container_width=True):
+                        if st.button(" Approve", key=f"approve_{upload_key}", type="primary", use_container_width=True):
                             with open(save_path, "wb") as f:
                                 f.write(uploaded_file.getbuffer())
                             st.session_state[upload_key] = "approved"
                             # Trigger backend scan so file gets classified
                             db.set_config("trigger_scan", "true")
-                            st.toast(f"✅ {uploaded_file.name} saved & classification started!")
+                            st.toast(f" {uploaded_file.name} saved & classification started!")
                             # Set a flag so the page auto-refreshes while clustering runs
                             st.session_state["awaiting_cluster"] = time.time()
                             time.sleep(1)
                             st.rerun()
                     with col_deny:
-                        if st.button("❌ Deny", key=f"deny_{upload_key}", use_container_width=True):
+                        if st.button("Deny", key=f"deny_{upload_key}", use_container_width=True):
                             st.session_state[upload_key] = "denied"
                             st.toast("File upload denied. Nothing was saved.")
                             time.sleep(0.5)
                             st.rerun()
             elif st.session_state.get(upload_key) == "denied":
-                st.caption("⛔ This file was denied. Upload a different file to proceed.")
+                st.caption("This file was denied. Upload a different file to proceed.")
 
         # Auto-reload while awaiting clustering after upload
         if st.session_state.get("awaiting_cluster"):
@@ -223,82 +213,12 @@ def main() -> None:
         # No folder filter — always show all
         selected_folder = "All"
 
+        # Show a "processing" indicator for files that have no embedding yet
+        pending_count = sum(1 for f in all_files if f.embedding is None)
+        if pending_count:
+            st.info(f"⏳ {pending_count} file(s) being processed…")
+
         st.caption(f"Active Folders: {len(clusters)} | Total Files: {len(all_files)}")
-
-        # --- Manual Approval Mode ---
-        st.markdown("---")
-        manual_mode = db.get_config("manual_mode") == "true"
-        new_mode = st.toggle("Manual Approval Mode", value=manual_mode, help="If enabled, files won't be moved automatically.")
-        if new_mode != manual_mode:
-            db.set_config("manual_mode", "true" if new_mode else "false")
-            st.rerun()
-
-        if manual_mode:
-            st.markdown("---")
-            st.subheader("⚠️ Pending Actions")
-            
-            # Find files that need moving based on PROPOSED_CLUSTER_ID
-            pending_moves = []
-            for f in all_files:
-                target_cid = f.proposed_cluster_id
-                if target_cid:
-                    cluster = next((c for c in clusters if c.cluster_id == target_cid), None)
-                    if cluster:
-                        target_name = cluster.folder_name
-                        expected_parent = Path(config.root_directory) / target_name
-                        if f.file_path.parent.resolve() != expected_parent.resolve():
-                            # Check if this specific target was already denied
-                            if f.denied_folder_path == target_name:
-                                continue
-                            pending_moves.append((f, target_name))
-                else:
-                    # No proposed cluster -> should be at root
-                    if f.file_path.parent.resolve() != Path(config.root_directory).resolve():
-                        pending_moves.append((f, ".")) # "." means root
-            
-            if pending_moves:
-                st.warning(f"{len(pending_moves)} moves pending.")
-                
-                # Single sync helper
-                def apply_sync(moves_dict):
-                    sync = OSSynchronizer(Path(config.root_directory), db)
-                    for fp, target_path in moves_dict.items():
-                        f_meta = next((f for f in all_files if str(f.file_path) == str(fp)), None)
-                        if f_meta and f_meta.proposed_cluster_id:
-                            db.update_file_cluster(fp, f_meta.proposed_cluster_id, 1.0)
-                            db.update_proposed_cluster(fp, None)
-                        elif str(target_path) == ".":
-                             db.update_file_cluster(fp, None, 0.0)
-                             db.update_proposed_cluster(fp, None)
-
-                    update = ClusterUpdate(new_clusters={c.cluster_id: c for c in clusters}, file_moves=moves_dict)
-                    try:
-                        sync.apply_cluster_update(update)
-                        # Trigger backend re-scan to reconcile state
-                        db.set_config("trigger_scan", "true")
-                        st.toast("✅ Moves applied successfully!")
-                        time.sleep(0.5)
-                    except Exception as e:
-                        st.error(f"Move failed: {e}")
-                    st.rerun()
-
-                if st.button("Apply All Moves", type="primary"):
-                    apply_sync({f.file_path: Path(target) for f, target in pending_moves})
-
-                st.write("Individual Moves:")
-                for i, (f, target) in enumerate(pending_moves):
-                    with st.expander(f"{f.filename} → {target}"):
-                        st.caption(f"From: `{f.file_path.parent.name or 'root'}`")
-                        c1, c2 = st.columns(2)
-                        if c1.button("Approve", key=f"app_{i}"):
-                            apply_sync({f.file_path: Path(target)})
-                        
-                        if c2.button("Deny", key=f"deny_{i}"):
-                            db.deny_file_cluster(f.file_path, target)
-                            st.toast("Move denied permanently.")
-                            st.rerun()
-            else:
-                st.info("Everything in sync.")
 
     # ---------------------------------------------------------------------------
     # Global View
@@ -344,7 +264,7 @@ def main() -> None:
         valid_files = [f for f in all_files if f.embedding is not None]
         if len(valid_files) < 2:
             if all_files:
-                st.info("🔄 **Re-analysis in progress...** The semantic map will appear once your files have been processed with the new model. Please ensure the backend script is running.")
+                st.info(" **Re-analysis in progress...** The semantic map will appear once your files have been processed with the new model. Please ensure the backend script is running.")
             else:
                 st.warning("Not enough files to visualize (need at least 2).")
         else:
