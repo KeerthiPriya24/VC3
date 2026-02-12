@@ -1,4 +1,4 @@
-# 🗂️ SEFS — Semantic Entropy File System
+#  SEFS — Semantic Entropy File System
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-ff4b4b?style=for-the-badge&logo=streamlit&logoColor=white)
@@ -8,7 +8,7 @@
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Project Title](#-sefs--semantic-entropy-file-system)
 2. [Description](#-description)
@@ -21,18 +21,18 @@
 
 ---
 
-## 📖 Description
+##  Description
 
 **SEFS (Semantic Entropy File System)** is an intelligent, AI-powered file management system that automatically organizes your files based on their **semantic content** rather than traditional folder hierarchies.
 
-### 🎯 Problem Statement
+###  Problem Statement
 Traditional file systems require manual organization, leading to:
 - Scattered documents across multiple folders
 - Difficulty finding related files
 - Time wasted on manual categorization
 - Inconsistent folder naming conventions
 
-### 💡 Solution
+###  Solution
 SEFS uses **Natural Language Processing (NLP)** and **Machine Learning** to:
 
 1. **Analyze File Content**: Extracts text from documents (TXT, MD, RST, LOG, PDF)
@@ -42,21 +42,21 @@ SEFS uses **Natural Language Processing (NLP)** and **Machine Learning** to:
 5. **Real-Time Monitoring**: Watches for file changes and automatically reorganizes
 6. **Visual Dashboard**: Interactive 2D visualization of file clusters
 
-### ✨ Key Features
+###  Key Features
 
 | Feature | Description |
 |---------|-------------|
-| 🧠 **Semantic Analysis** | Uses sentence-transformers to understand file content meaning |
-| 📊 **Recursive Clustering** | Hierarchical grouping with configurable depth (up to 3 levels) |
-| 🔄 **Real-Time Sync** | Watchdog-based file monitoring with automatic reorganization |
-| 🎨 **Visual Interface** | Streamlit dashboard with t-SNE 2D projections |
-| 📁 **Smart Naming** | TF-IDF based keyword extraction for folder names |
-| 💾 **SQLite Storage** | Persistent metadata and embedding cache |
-| ⚡ **Incremental Updates** | Only re-analyzes changed files (checksum-based) |
+| **Semantic Analysis** | Uses sentence-transformers to understand file content meaning |
+| **Recursive Clustering** | Hierarchical grouping with configurable depth (up to 3 levels) |
+| **Real-Time Sync** | Watchdog-based file monitoring with automatic reorganization |
+| **Visual Interface** | Streamlit dashboard with t-SNE 2D projections |
+| **Smart Naming** | TF-IDF based keyword extraction for folder names |
+| **SQLite Storage** | Persistent metadata and embedding cache |
+| **Incremental Updates** | Only re-analyzes changed files (checksum-based) |
 
 ---
 
-## 🛠️ Tech Stack Used
+##  Tech Stack Used
 
 ### Core Technologies
 
@@ -109,7 +109,7 @@ SEFS uses **Natural Language Processing (NLP)** and **Machine Learning** to:
 
 ---
 
-## 🚀 How to Run the Project
+##  How to Run the Project
 
 ### Prerequisites
 
@@ -188,7 +188,7 @@ streamlit run sefs/visual_interface.py
 
 ---
 
-## 📦 Dependencies
+##  Dependencies
 
 ### Required Dependencies
 
@@ -230,9 +230,8 @@ dev = [
 
 ---
 
-## ⚠️ Important Instructions
+##  Important Instructions
 
-### Before Running
 
 1. **First-Time Setup**: The first run downloads the `all-mpnet-base-v2` model (~400MB). Ensure stable internet connection.
 
@@ -284,72 +283,15 @@ pkill -f "streamlit"
 
 ---
 
-## 🎬 Demo Videos of MVP
-
-> *Add your demo video links here*
-
-### Video 1: Project Overview & Setup
+### Video : Real-Time File Organization Demo
+https://drive.google.com/drive/folders/1kQXawztj4a6JHlBJqBdd7ZxAR_UCTpf5?usp=drive_link
 ```
-[📹 Watch Video: Project Setup Guide]
-URL: <Add your video link>
-Duration: ~5 minutes
-```
-
-### Video 2: Real-Time File Organization Demo
-```
-[📹 Watch Video: Live Clustering Demo]
-URL: <Add your video link>
-Duration: ~3 minutes
-```
-
-### Video 3: Visual Dashboard Walkthrough
-```
-[📹 Watch Video: Dashboard Features]
-URL: <Add your video link>
-Duration: ~4 minutes
-```
-
-### Suggested Demo Recording Checklist
-
-- [ ] Show initial unorganized folder
-- [ ] Run SEFS main command
-- [ ] Demonstrate automatic folder creation
-- [ ] Add new files and show real-time reorganization
-- [ ] Navigate the Streamlit dashboard
-- [ ] Show 2D cluster visualization
-- [ ] Demonstrate file search functionality
 
 ---
 
-## 🖼️ Demo Images of MVP
+### Demo Images
 
-> *Replace placeholder paths with actual screenshots*
-
-### 1. Initial Unorganized Folder
-![Before SEFS](docs/images/before_sefs.png)
-*Files scattered without semantic organization*
-
-### 2. After SEFS Organization
-![After SEFS](docs/images/after_sefs.png)
-*Automatically created semantic folders*
-
-### 3. Streamlit Dashboard Overview
-![Dashboard](docs/images/dashboard_overview.png)
-*Main dashboard showing file clusters and statistics*
-
-### 4. 2D Semantic Visualization
-![Visualization](docs/images/2d_visualization.png)
-*t-SNE projection showing semantic file clusters*
-
-### 5. Cluster Details View
-![Cluster Details](docs/images/cluster_details.png)
-*Detailed view of files within a semantic cluster*
-
-### 6. File Similarity Matrix
-![Similarity Matrix](docs/images/similarity_matrix.png)
-*Heatmap showing file-to-file semantic similarity*
-
----
+https://drive.google.com/drive/folders/1jMdMHvprhgn6uuhJsyVB7CqBjKh_Ulhb?usp=sharing
 
 ## 📁 Project Structure
 
@@ -392,28 +334,8 @@ pytest tests/test_semantic_engine.py -v
 
 ---
 
-## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
----
 
-## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-
-## 👨‍💻 Author
-
-**SEFS Development Team**
-
----
-
-<p align="center">
-  Made with ❤️ and 🤖 AI
-</p>
