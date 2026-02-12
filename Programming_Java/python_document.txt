@@ -1,0 +1,10 @@
+Python Programming Basics
+
+Python is a high-level, interpreted programming language known for
+readability and simplicity. It is widely used in data science,
+artificial intelligence, web development, and automation.
+
+Key Features: - Easy syntax - Large standard library - Cross-platform
+support - Strong community
+
+Example: print(“Hello, World!”)

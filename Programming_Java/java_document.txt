@@ -1,0 +1,11 @@
+Java Programming Basics
+
+Java is an object-oriented programming language designed for
+portability. It runs on the Java Virtual Machine (JVM) and is widely
+used in enterprise, Android development, and backend systems.
+
+Key Features: - Object-oriented - Platform independent - Automatic
+memory management - Strong ecosystem
+
+Example: public class Hello { public static void main(String[] args) {
+System.out.println(“Hello, World!”); } }

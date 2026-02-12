@@ -1,0 +1,19 @@
+Applications of Machine Learning
+
+Machine Learning is widely used across industries to automate tasks and
+gain insights.
+
+Major Applications:
+
+Healthcare: - Disease prediction - Medical image analysis - Personalized
+treatment
+
+Finance: - Fraud detection - Credit scoring - Stock prediction
+
+Technology: - Chatbots - Search engines - Autonomous vehicles
+
+Business: - Customer segmentation - Demand forecasting - Marketing
+optimization
+
+Future Scope: Machine learning is expected to play a major role in
+robotics, smart cities, climate prediction, and advanced AI systems.

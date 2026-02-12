@@ -1,0 +1,10 @@
+C Programming Basics
+
+C is a powerful procedural programming language widely used for system
+programming, embedded systems, and performance-critical applications.
+
+Key Features: - Low-level memory access - Fast execution - Portable
+code - Foundation for many modern languages
+
+Example: #include <stdio.h> int main() { printf(“Hello, World!”); return
+0; }
