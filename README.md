@@ -289,11 +289,11 @@ https://drive.google.com/drive/folders/1kQXawztj4a6JHlBJqBdd7ZxAR_UCTpf5?usp=dri
 
 ---
 
-### Demo Images
+## Demo Images
 
 https://drive.google.com/drive/folders/1jMdMHvprhgn6uuhJsyVB7CqBjKh_Ulhb?usp=sharing
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 VC3/
